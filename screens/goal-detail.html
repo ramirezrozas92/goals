@@ -6,301 +6,374 @@
     <title>Detalle de Meta - VITA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/vita.css">
+    <script src="../assets/js/xp.js"></script>
+    <script src="../assets/js/store.js"></script>
+    <script src="../assets/js/llm.js"></script>
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc; 
-            min-height: 100vh;
-            margin: 0;
-            padding-bottom: 60px;
-        }
+        body { background-color: #f8fafc; min-height: 100vh; margin: 0; padding-bottom: 60px; }
 
-        /* Estilo de Tarjeta Stats */
         .stat-card-premium {
-            background: white;
-            border-radius: 24px;
-            padding: 16px;
-            text-align: center;
-            border: 1px solid #f1f5f9;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            background: white; border-radius: 24px; padding: 16px; text-align: center;
+            border: 1px solid #f1f5f9; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
 
-        /* Hero Moderno */
         .goal-header {
             background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-            border-radius: 0 0 40px 40px;
-            padding: 40px 24px 60px;
-            color: white;
-            position: relative;
+            border-radius: 0 0 40px 40px; padding: 40px 24px 60px; color: white; position: relative;
         }
 
-        /* Barra de Progreso General en Cabecera */
-        .header-progress-bg {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            overflow: hidden;
-            width: 100%;
-            margin-top: 12px;
-        }
+        .header-progress-bg { height: 8px; background: rgba(255, 255, 255, 0.2); border-radius: 12px; overflow: hidden; width: 100%; margin-top: 12px; }
+        .header-progress-fill { height: 100%; background: #10b981; border-radius: 12px; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        .header-progress-fill {
-            height: 100%;
-            background: #10b981;
-            border-radius: 12px;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
-            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .roadmap-container { position: relative; padding-left: 40px; }
+        .roadmap-line { position: absolute; left: 14px; top: 0; bottom: 0; width: 3px; background: #e2e8f0; z-index: 0; }
+        .roadmap-progress-line { position: absolute; left: 14px; top: 0; width: 3px; background: linear-gradient(to bottom, #10b981, #4f46e5); z-index: 1; transition: height 1s ease-in-out; }
 
-        /* Camino de Niveles */
-        .roadmap-container {
-            position: relative;
-            padding-left: 40px;
-        }
-
-        .roadmap-line {
-            position: absolute;
-            left: 14px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: #e2e8f0;
-            z-index: 0;
-        }
-
-        .roadmap-progress-line {
-            position: absolute;
-            left: 14px;
-            top: 0;
-            width: 3px;
-            background: linear-gradient(to bottom, #10b981, #4f46e5);
-            z-index: 1;
-            transition: height 1s ease-in-out;
-        }
-
-        .level-marker {
-            position: relative;
-            z-index: 10;
-            margin-bottom: 40px;
-        }
-
+        .level-marker { position: relative; z-index: 10; margin-bottom: 32px; }
         .marker-dot {
-            position: absolute;
-            left: -38px;
-            top: 4px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 800;
+            position: absolute; left: -38px; top: 4px; width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
         }
-
         .dot-completed { background: #10b981; color: white; border: 4px solid #f8fafc; }
         .dot-current { background: #4f46e5; color: white; border: 4px solid #f8fafc; box-shadow: 0 0 15px rgba(79, 70, 229, 0.4); }
         .dot-locked { background: #e2e8f0; color: #94a3b8; border: 4px solid #f8fafc; }
 
-        .level-card {
-            background: white;
-            border-radius: 24px;
-            padding: 20px;
-            border: 1px solid #f1f5f9;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
-        }
+        .level-card { background: white; border-radius: 24px; padding: 20px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03); }
 
-        /* Tareas */
-        .task-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #f8fafc;
-        }
-
+        .task-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
         .task-row:last-child { border-bottom: none; }
+        .task-title.done { text-decoration: line-through; color: #94a3b8; }
+        .task-xp { font-size: 11px; font-weight: 800; color: #4f46e5; white-space: nowrap; }
+        .mini-btn { border: none; background: none; color: #94a3b8; font-weight: 800; cursor: pointer; padding: 6px 8px; border-radius: 8px; font-size: 13px; }
+        .mini-btn:hover { color: #ef4444; background: #fef2f2; }
 
-        .custom-check {
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+        .add-row { display: flex; gap: 8px; margin-top: 12px; }
+        .add-row input {
+            flex: 1; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;
+            font: inherit; font-size: 14px;
         }
-
-        .custom-check.checked {
-            background: #10b981;
-            border-color: #10b981;
-            color: white;
-        }
+        .add-row input:focus { border-color: #4f46e5; outline: none; }
     </style>
 </head>
 <body>
 
-    <!-- Header / Nav -->
     <div class="px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md">
-        <a href="goals-page.html" aria-label="Volver" class="p-2 text-slate-600 font-bold">←</a>
+        <a href="goals-page.html" aria-label="Volver a metas" class="p-2 text-slate-600 font-bold">←</a>
         <span class="font-bold text-slate-800 tracking-tight">Mi Progreso</span>
         <a href="daily-focus-habitos.html" class="text-sm font-bold text-indigo-600">Focus →</a>
     </div>
 
-    <!-- Hero de Meta con Barra de Progreso Global -->
-    <!-- Convención: header = % GLOBAL (5/13 tareas = 38%). El % del NIVEL 2 (2/3 = 66%) vive en su tarjeta. -->
+    <!-- Hero: header = % GLOBAL de la meta. El % de cada NIVEL vive en su tarjeta. -->
     <div class="goal-header">
         <div class="flex items-center gap-4 mb-4">
-            <div class="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center text-3xl border border-white/30">
-                🎯
-            </div>
+            <div id="goal-icon" class="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center text-3xl border border-white/30">🎯</div>
             <div class="flex-1">
-                <h1 class="text-2xl font-black mb-1 text-white leading-tight">Líder Inmobiliario</h1>
+                <h1 id="goal-title" class="text-2xl font-black mb-1 text-white leading-tight">Líder Inmobiliario</h1>
                 <div class="flex items-center justify-between gap-4">
-                    <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10">TRABAJO</span>
-                    <span class="text-[10px] font-black text-white/90"><span id="global-pct">38</span>% COMPLETADO · <span id="global-count">5/13</span></span>
+                    <span id="goal-tag" class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10">TRABAJO</span>
+                    <span class="text-[10px] font-black text-white/90"><span id="global-pct">0</span>% COMPLETADO · <span id="global-count">0/0</span></span>
                 </div>
             </div>
         </div>
 
-        <!-- Barra de Progreso de la Meta General -->
         <div class="header-progress-bg">
-            <div class="header-progress-fill" id="global-bar" style="width: 38%;"></div>
+            <div class="header-progress-fill" id="global-bar" style="width: 0%;"></div>
         </div>
 
-        <!-- Tarjetas de Stats Principales -->
         <div class="grid grid-cols-2 gap-4 mt-8">
             <div class="stat-card-premium">
                 <span class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">XP ACUMULADA</span>
-                <span class="text-2xl font-black text-indigo-600"><span id="stat-xp">850</span> <span class="text-xs font-bold text-indigo-300">XP</span></span>
+                <span class="text-2xl font-black text-indigo-600"><span id="stat-xp">0</span> <span class="text-xs font-bold text-indigo-300">XP</span></span>
             </div>
             <div class="stat-card-premium">
                 <span class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">NIVEL ACTUAL</span>
-                <span class="text-2xl font-black text-amber-500"><span id="stat-level">2</span> <span class="text-xs font-bold text-amber-300">/ 5</span></span>
+                <span class="text-2xl font-black text-amber-500"><span id="stat-level">1</span> <span class="text-xs font-bold text-amber-300" id="stat-level-total">/ 1</span></span>
             </div>
         </div>
+
+        <div class="flex flex-wrap gap-2 mt-6">
+            <button class="vita-btn vita-btn-primary !py-3 !px-4 !text-sm" onclick="openAIStudio()">✨ Plan con IA</button>
+            <button class="vita-btn vita-btn-ghost !py-3 !px-4 !text-sm !bg-white/15 !text-white !border-white/30" onclick="addLevel()">+ Nivel</button>
+        </div>
+        <p id="plan-source" class="mt-3 text-[11px] font-semibold text-white/70"></p>
     </div>
 
-    <!-- Contenido del Camino -->
     <div class="px-6 mt-10">
         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-100 pb-2">Camino de Maestría</h2>
-        
-        <div class="roadmap-container">
-            <!-- Barra de Progreso Visual Vertical -->
+        <div class="roadmap-container" id="roadmap">
             <div class="roadmap-line"></div>
-            <div class="roadmap-progress-line" id="roadmap-bar" style="height: 38%;"></div>
-
-            <!-- Nivel 1 (Completado) -->
-            <div class="level-marker">
-                <div class="marker-dot dot-completed">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <div class="level-card opacity-60">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-slate-700">Nivel 1: Cimientos</h3>
-                            <p class="text-xs text-slate-500 mt-1">Definir nicho y primeros pasos estratégicos.</p>
-                        </div>
-                        <span class="text-[10px] font-black text-emerald-500">LISTO</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nivel 2 (Actual - Ahora más limpio) -->
-            <div class="level-marker">
-                <div class="marker-dot dot-current">2</div>
-                <div class="level-card">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-lg">Nivel 2: Marca Personal</h3>
-                            <p class="text-xs text-slate-500 mt-1">Establecer presencia online consistente.</p>
-                        </div>
-                        <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">ACTUAL</span>
-                    </div>
-
-                    <!-- Lista de Tareas (Nivel 2: 2/3 = 66% nivel, coherente con goals-page) -->
-                    <div class="mb-2 flex justify-between text-xs font-bold text-slate-500">
-                        <span>NIVEL 2 · <span id="level2-pct">66</span>%</span>
-                        <span class="text-indigo-600">+125 XP / tarea</span>
-                    </div>
-                    <div class="space-y-1" id="level2-tasks">
-                        <div class="task-row">
-                            <span class="text-sm font-semibold text-slate-700">Publicar video corto</span>
-                            <div class="custom-check checked" data-xp="125" onclick="toggleTask(this)">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="task-row">
-                            <span class="text-sm font-semibold text-slate-700">Crear calendario semanal</span>
-                            <div class="custom-check checked" data-xp="125" onclick="toggleTask(this)">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="task-row">
-                            <span class="text-sm font-semibold text-slate-700">Investigar 3 tendencias</span>
-                            <div class="custom-check" data-xp="125" onclick="toggleTask(this)"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nivel 3 (Bloqueado) -->
-            <div class="level-marker">
-                <div class="marker-dot dot-locked">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <div class="level-card opacity-50 bg-slate-50/50">
-                    <h3 class="font-bold text-slate-400 text-lg">Nivel 3: Ampliación</h3>
-                    <p class="text-xs text-slate-400 mt-1">Escalar sistema de captación de clientes.</p>
-                </div>
-            </div>
-
+            <div class="roadmap-progress-line" id="roadmap-bar" style="height: 0%;"></div>
         </div>
     </div>
 
+    <!-- Estudio IA: genera el plan de niveles con un LM (o fallback local) -->
+    <div class="vita-modal-backdrop" id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-title">
+        <div class="vita-modal">
+            <h3 id="ai-title" class="text-xl font-black text-slate-800 mb-1">✨ Generar plan con IA</h3>
+            <p class="text-sm text-slate-500 mb-4">El LM propone niveles y tareas. Tú los aplicas o los ajustas. Sin clave usa el generador local.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="vita-field">
+                    <label for="ai-levels">Niveles</label>
+                    <input id="ai-levels" type="number" min="1" max="8" value="4">
+                </div>
+                <div class="vita-field">
+                    <label for="ai-tasks">Tareas / nivel</label>
+                    <input id="ai-tasks" type="number" min="1" max="8" value="3">
+                </div>
+            </div>
+            <div class="vita-field">
+                <label for="ai-context">Contexto (opcional)</label>
+                <textarea id="ai-context" rows="2" placeholder="Ej. tengo 30 min al día, empiezo de cero…"></textarea>
+            </div>
+            <details class="mb-4 text-sm">
+                <summary class="font-bold text-slate-600 cursor-pointer">Conexión del modelo</summary>
+                <div class="grid gap-3 mt-3">
+                    <div class="vita-field !mb-0">
+                        <label for="ai-endpoint">Endpoint (OpenAI-compatible)</label>
+                        <input id="ai-endpoint" placeholder="http://localhost:11434/v1">
+                    </div>
+                    <div class="vita-field !mb-0">
+                        <label for="ai-model">Modelo</label>
+                        <input id="ai-model" placeholder="llama3.1">
+                    </div>
+                    <div class="vita-field !mb-0">
+                        <label for="ai-key">API key (solo este navegador)</label>
+                        <input id="ai-key" type="password" placeholder="vacío para Ollama local" autocomplete="off">
+                    </div>
+                </div>
+            </details>
+            <div id="ai-preview" class="mb-4"></div>
+            <div id="ai-status" class="text-sm font-semibold text-slate-500 mb-3" role="status"></div>
+            <div class="flex gap-2">
+                <button id="ai-generate" class="vita-btn vita-btn-primary flex-1" onclick="generateAIPlan()">Generar</button>
+                <button id="ai-apply" class="vita-btn vita-btn-ghost flex-1" onclick="applyAIPlan()" disabled>Aplicar plan</button>
+                <button class="vita-btn vita-btn-ghost" onclick="closeAIStudio()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="vita-toast" role="status"></div>
+
     <script>
-        // Estado canónico meta 1: Nivel 1 (3/3 = 550 XP con bonus) + Nivel 2 (2/3 = 250 XP)
-        // + 50 XP racha = 850 XP. Global: 5/13 tareas = 38%.
-        const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>';
-        const LEVEL1_DONE = 3, LEVEL1_TOTAL = 3, LEVEL1_XP = 550; // 3×100 + 250 bonus
-        const LEVEL2_TOTAL = 3, GLOBAL_TOTAL = 13, STREAK_XP = 50;
+        var store = VITA_STORE.createStore();
+        var goals = store.load();
+        var GOAL_ID = 'g-inmobiliario';
+        try {
+            var q = new URLSearchParams(window.location.search).get('goal');
+            if (q && goals.some(function (g) { return g.id === q; })) GOAL_ID = q;
+        } catch (e) { /* sin URL (tests) */ }
+        var goal = goals.find(function (g) { return g.id === GOAL_ID; }) || goals[0];
+        var aiDraft = null;
 
-        function currentLevel2Done() {
-            return document.querySelectorAll('#level2-tasks .custom-check.checked').length;
+        var CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>';
+
+        var toastTimer = null;
+        function toast(msg) {
+            var el = document.getElementById('vita-toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
         }
 
-        function toggleTask(el) {
-            el.classList.toggle('checked');
-            el.innerHTML = el.classList.contains('checked') ? CHECK_SVG : '';
-            recalc();
+        function persist() { store.save(goals); }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
         }
 
-        function recalc() {
-            const l2done = currentLevel2Done();
-            const l2pct = Math.round((l2done / LEVEL2_TOTAL) * 100);
-            const globalDone = LEVEL1_DONE + l2done;
-            const globalPct = Math.round((globalDone / GLOBAL_TOTAL) * 100);
-            const xp = LEVEL1_XP + l2done * 125 + STREAK_XP;
+        function render() {
+            var stats = VITA_XP.computeGoalStats(goal);
+            document.getElementById('goal-icon').textContent = goal.icon;
+            document.getElementById('goal-title').textContent = goal.title;
+            document.getElementById('goal-tag').textContent = (goal.tag || '').replace('#', '');
+            document.getElementById('global-pct').textContent = stats.globalPct;
+            document.getElementById('global-count').textContent = stats.doneTasks + '/' + stats.totalTasks;
+            document.getElementById('global-bar').style.width = stats.globalPct + '%';
+            document.getElementById('roadmap-bar').style.height = stats.globalPct + '%';
+            document.getElementById('stat-xp').textContent = stats.xp.toLocaleString();
+            document.getElementById('stat-level').textContent = goal.levels.length ? stats.level : '—';
+            document.getElementById('stat-level-total').textContent = '/ ' + goal.levels.length;
+            document.getElementById('plan-source').textContent = goal.planSource === 'lm'
+                ? 'Plan generado con IA (' + (goal.planModel || 'modelo') + ') · editable abajo'
+                : goal.planSource === 'local' ? 'Plan del generador local · pulsa ✨ para usar IA' : '';
 
-            document.getElementById('level2-pct').textContent = l2pct;
-            document.getElementById('global-pct').textContent = globalPct;
-            document.getElementById('global-count').textContent = globalDone + '/' + GLOBAL_TOTAL;
-            document.getElementById('global-bar').style.width = globalPct + '%';
-            document.getElementById('roadmap-bar').style.height = globalPct + '%';
-            document.getElementById('stat-xp').textContent = xp.toLocaleString();
+            var roadmap = document.getElementById('roadmap');
+            roadmap.querySelectorAll('.level-marker').forEach(function (n) { n.remove(); });
+
+            goal.levels.forEach(function (lv, idx) {
+                var n = idx + 1;
+                var state = stats.states[idx];
+                var pct = stats.levelPct[idx];
+                var dot = state === 'completed'
+                    ? '<div class="marker-dot dot-completed">' + CHECK_SVG + '</div>'
+                    : state === 'current'
+                        ? '<div class="marker-dot dot-current">' + n + '</div>'
+                        : '<div class="marker-dot dot-locked">🔒</div>';
+                var badge = state === 'completed'
+                    ? '<span class="text-[10px] font-black text-emerald-500">LISTO +250 XP</span>'
+                    : state === 'current'
+                        ? '<span class="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">ACTUAL</span>'
+                        : '<span class="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">BLOQUEADO</span>';
+
+                var tasksHtml = (lv.tasks || []).map(function (tk) {
+                    return '<div class="task-row">' +
+                        '<span class="text-sm font-semibold ' + (tk.done ? 'task-title done' : 'text-slate-700') + '">' + esc(tk.title) + '</span>' +
+                        '<span class="flex items-center gap-2">' +
+                            '<span class="task-xp">+' + VITA_XP.taskXPForLevel(n) + ' XP</span>' +
+                            '<button class="vita-check !min-w-[36px] !w-9 !h-9" aria-pressed="' + (!!tk.done) + '" aria-label="' + esc((tk.done ? 'Desmarcar ' : 'Completar ') + tk.title) + '" ' + (state === 'locked' ? 'disabled' : '') + ' onclick="toggleTask(\'' + lv.id + '\',\'' + tk.id + '\')">' + (tk.done ? CHECK_SVG : '') + '</button>' +
+                            '<button class="mini-btn" aria-label="Eliminar tarea" onclick="removeTask(\'' + lv.id + '\',\'' + tk.id + '\')">✕</button>' +
+                        '</span></div>';
+                }).join('');
+
+                var body = state === 'locked'
+                    ? '<p class="text-xs text-slate-400 mt-1">Completa el Nivel ' + (n - 1) + ' al 100% para desbloquearlo.</p>'
+                    : tasksHtml +
+                      '<div class="add-row"><input id="add-' + lv.id + '" placeholder="Nueva tarea del Nivel ' + n + '…" onkeydown="if(event.key===\'Enter\')addTask(\'' + lv.id + '\')">' +
+                      '<button class="vita-btn vita-btn-ghost !py-2 !px-3 !text-sm" onclick="addTask(\'' + lv.id + '\')">Añadir</button></div>';
+
+                var card = document.createElement('div');
+                card.className = 'level-marker';
+                card.innerHTML = dot +
+                    '<div class="level-card ' + (state === 'locked' ? 'opacity-50 bg-slate-50/50' : state === 'completed' ? 'opacity-70' : '') + '">' +
+                        '<div class="flex justify-between items-start mb-2"><div><h3 class="font-bold text-slate-800 text-lg">' + esc(lv.title) + '</h3>' +
+                        '<p class="text-xs text-slate-500 mt-1">' + esc(lv.desc || '') + '</p></div>' + badge + '</div>' +
+                        '<div class="mb-2 flex justify-between text-xs font-bold text-slate-500"><span>NIVEL ' + n + ' · ' + pct + '%</span>' +
+                        '<button class="mini-btn" onclick="removeLevel(\'' + lv.id + '\')">Eliminar nivel</button></div>' + body + '</div>';
+                roadmap.appendChild(card);
+            });
         }
 
-        recalc();
+        function findLevel(id) { return goal.levels.find(function (l) { return l.id === id; }); }
+
+        function toggleTask(levelId, taskId) {
+            var lv = findLevel(levelId);
+            if (!lv) return;
+            var idx = goal.levels.indexOf(lv);
+            var states = VITA_XP.levelStates(goal.levels);
+            if (states[idx] === 'locked') { toast('🔒 Completa el nivel anterior primero'); return; }
+            var tk = lv.tasks.find(function (t) { return t.id === taskId; });
+            if (!tk) return;
+            var before = VITA_XP.computeGoalStats(goal);
+            tk.done = !tk.done;
+            persist();
+            var after = VITA_XP.computeGoalStats(goal);
+            var gained = after.xp - before.xp;
+            if (gained > 0) toast('+' + gained + ' XP · ' + after.xp.toLocaleString() + ' XP total');
+            if (after.isComplete && !before.isComplete) toast('🏆 ¡Meta completada! +1000 XP de Gran Logro');
+            render();
+        }
+
+        function addTask(levelId) {
+            var input = document.getElementById('add-' + levelId);
+            var title = input ? input.value.trim() : '';
+            if (!title) { toast('Escribe la tarea primero'); return; }
+            var lv = findLevel(levelId);
+            if (!lv) return;
+            lv.tasks.push(VITA_STORE.task(title, false)); // spec §3: si estaba al 100%, el bonus se recalcula solo
+            persist(); render();
+            toast('Tarea añadida al ' + lv.title.split(':')[0]);
+        }
+
+        function removeTask(levelId, taskId) {
+            var lv = findLevel(levelId);
+            if (!lv) return;
+            lv.tasks = lv.tasks.filter(function (t) { return t.id !== taskId; });
+            persist(); render();
+        }
+
+        function addLevel() {
+            var n = goal.levels.length + 1;
+            goal.levels.push({ id: VITA_STORE.uid(), title: 'Nivel ' + n + ': Nuevo reto', desc: 'Describe el resultado de este nivel.', tasks: [] });
+            persist(); render();
+            toast('Nivel ' + n + ' creado · añade su primera tarea');
+        }
+
+        function removeLevel(levelId) {
+            if (!confirm('¿Eliminar este nivel y sus tareas?')) return;
+            goal.levels = goal.levels.filter(function (l) { return l.id !== levelId; });
+            goal.levels.forEach(function (l, i) {
+                if (/^Nivel \d+:/.test(l.title)) l.title = l.title.replace(/^Nivel \d+:/, 'Nivel ' + (i + 1) + ':');
+            });
+            persist(); render();
+        }
+
+        /* ---- Estudio IA ---- */
+        function openAIStudio() {
+            var s = VITA_LLM.loadSettings(localStorage);
+            document.getElementById('ai-endpoint').value = s.endpoint;
+            document.getElementById('ai-model').value = s.model;
+            document.getElementById('ai-key').value = s.apiKey;
+            document.getElementById('ai-preview').innerHTML = '';
+            document.getElementById('ai-status').textContent = '';
+            document.getElementById('ai-apply').disabled = true;
+            aiDraft = null;
+            document.getElementById('ai-modal').classList.add('open');
+        }
+        function closeAIStudio() { document.getElementById('ai-modal').classList.remove('open'); }
+
+        function generateAIPlan() {
+            var settings = {
+                endpoint: document.getElementById('ai-endpoint').value.trim() || VITA_LLM.DEFAULTS.endpoint,
+                model: document.getElementById('ai-model').value.trim() || VITA_LLM.DEFAULTS.model,
+                apiKey: document.getElementById('ai-key').value,
+                timeoutMs: 45000
+            };
+            VITA_LLM.saveSettings(settings, localStorage);
+            var btn = document.getElementById('ai-generate');
+            var status = document.getElementById('ai-status');
+            btn.disabled = true;
+            status.textContent = 'Generando plan… (si no hay modelo, se usa el generador local)';
+            VITA_LLM.generatePlan({
+                goalTitle: goal.title,
+                context: document.getElementById('ai-context').value.trim(),
+                numLevels: parseInt(document.getElementById('ai-levels').value, 10) || 4,
+                tasksPerLevel: parseInt(document.getElementById('ai-tasks').value, 10) || 3,
+                settings: settings
+            }).then(function (plan) {
+                btn.disabled = false;
+                aiDraft = plan;
+                var v = VITA_LLM.validatePlan(plan);
+                if (!v.ok) { status.textContent = '⚠️ ' + v.error; return; }
+                status.textContent = plan.source === 'lm' ? '✓ Plan de ' + settings.model : '✓ Generador local (conecta un modelo para planes a medida)';
+                document.getElementById('ai-preview').innerHTML = v.plan.levels.map(function (l, i) {
+                    return '<div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-2 text-sm"><b>Nivel ' + (i + 1) + ': ' + esc(l.title) + '</b><ul class="mt-1 text-slate-600">' +
+                        l.tasks.map(function (t) { return '<li>· ' + esc(t) + '</li>'; }).join('') + '</ul></div>';
+                }).join('');
+                document.getElementById('ai-apply').disabled = false;
+            });
+        }
+
+        function applyAIPlan() {
+            if (!aiDraft) return;
+            if (!confirm('¿Reemplazar los niveles actuales por el plan generado? Se conservan las tareas ya completadas con el mismo nombre.')) return;
+            var doneByTitle = {};
+            goal.levels.forEach(function (l) { (l.tasks || []).forEach(function (t) { if (t.done) doneByTitle[t.title.trim().toLowerCase()] = true; }); });
+            goal.levels = aiDraft.levels.map(function (l, i) {
+                return {
+                    id: VITA_STORE.uid(),
+                    title: /^Nivel \d+:/i.test(l.title) ? l.title : 'Nivel ' + (i + 1) + ': ' + l.title,
+                    desc: l.desc || '',
+                    tasks: l.tasks.map(function (t) { return VITA_STORE.task(t, !!doneByTitle[String(t).trim().toLowerCase()]); })
+                };
+            });
+            goal.planSource = aiDraft.source;
+            goal.planModel = aiDraft.model || null;
+            persist(); render(); closeAIStudio();
+            toast('Plan aplicado · ' + goal.levels.length + ' niveles');
+        }
+
+        document.getElementById('ai-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeAIStudio();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeAIStudio();
+        });
+
+        render();
     </script>
 
 </body>

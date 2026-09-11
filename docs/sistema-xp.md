@@ -1,11 +1,14 @@
 # Arquitectura del Sistema de Experiencia (XP) - VITA
 
-> Implementación vigente en `screens/` (2026-09-11):
+> Implementación vigente (código en `assets/js/xp.js`, tests en `tests/run.js`):
 > - `taskXPForLevel(n) = round(100 × 1.25^(n-1))` → L1=100, L2=125, L3=156.
-> - `globalLevelForXP(xp) = floor(sqrt(xp/500)) + 1` → 2000 XP = Nivel 3.
-> - Convención de progreso: `goals-page` muestra % del NIVEL (meta 1: 2/3 = 66%);
->   `goal-detail` muestra % GLOBAL (5/13 = 38%). No son el mismo número a propósito.
-> - Meta 1 canónica: Nivel 1 (3/3 = 550 XP con bonus) + Nivel 2 (2/3 = 250 XP) + racha 50 = **850 XP**.
+> - `globalLevelForXP(xp) = floor(sqrt(xp/500)) + 1` → 500 XP = Nivel 2, 2000 XP = Nivel 3.
+> - `computeGoalStats(goal)` = fuente única: % global, % por nivel, estados
+>   (completed/current/locked), XP con bonus +250/nivel y +1000 al cerrar meta.
+> - Convención de progreso: `goals-page` muestra % del NIVEL actual;
+>   `goal-detail` muestra % GLOBAL de la meta.
+> - Store compartido en `assets/js/store.js` (`vita-goals-v1`): todas las pantallas
+>   leen y escriben las mismas metas. Semilla: "Líder Inmobiliario" 850 XP · Nivel 2.
 
 ---
 Arquitectura del Sistema de Experiencia (XP) - VITA

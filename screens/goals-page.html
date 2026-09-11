@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tus Metas - VITA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/vita.css">
+    <script src="../assets/js/xp.js"></script>
+    <script src="../assets/js/store.js"></script>
     <style>
         body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
             background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%); 
             min-height: 100vh;
             padding: 0;
@@ -117,16 +122,16 @@
                     <span class="text-lg">⚡</span>
                     <div class="flex flex-col leading-none">
                         <span class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">XP Total</span>
-                        <span class="font-black text-amber-900 text-sm" id="total-xp">2,000</span>
+                        <span class="font-black text-amber-900 text-sm" id="total-xp">1,575</span>
                     </div>
                 </div>
                 <!-- Toast XP (reemplaza el alert bloqueante) -->
-                <div id="xp-toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg z-50 transition-opacity"></div>
+                <div id="vita-toast" role="status"></div>
                 
                 <!-- Nivel Global -->
                 <div class="global-level w-12 h-12 rounded-2xl flex flex-col items-center justify-center" title="Nivel global cuadrático: 500·(n-1)²">
                     <span class="text-[10px] font-bold opacity-80 leading-none mt-0.5">NIVEL</span>
-                    <span class="text-xl font-black leading-none" id="global-level">3</span>
+                    <span class="text-xl font-black leading-none" id="global-level">2</span>
                 </div>
             </div>
         </div>
@@ -177,89 +182,50 @@
     </div>
 
     <script>
-        // Modelo canónico VITA (ver docs/sistema-xp.md):
-        // - XP tarea nivel n = round(100 * 1.25^(n-1)) → L1=100, L2=125, L3=156
-        // - "progress" = % del NIVEL actual. El % GLOBAL de la meta vive en goal-detail.html (38%).
-        //   Ej. meta 1: 13 tareas totales, 5 hechas = 38% global; nivel 2: 2/3 = 66%.
-        // - Nivel global cuadrático: acumulado necesario = 500*(n-1)^2 → L3 = 2000 XP.
-        const TAG_COLORS = { indigo: '#4f46e5', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e' };
-        function taskXPForLevel(level) { return Math.round(100 * Math.pow(1.25, level - 1)); }
-        function globalLevelForXP(totalXP) { return Math.floor(Math.sqrt(totalXP / 500)) + 1; }
-        function xpForGlobalLevel(level) { return 500 * Math.pow(level - 1, 2); }
+        // VITA: datos y fórmulas compartidos (assets/js). "progress" = % del NIVEL actual;
+        // el % GLOBAL de cada meta vive en goal-detail.html.
+        var taskXPForLevel = VITA_XP.taskXPForLevel;
+        var globalLevelForXP = VITA_XP.globalLevelForXP;
+        var store = VITA_STORE.createStore();
+        var goals = store.load();
+        var TAG_COLORS = { indigo: '#4f46e5', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e' };
 
-        // Datos de ejemplo con XP por goal
-        const goals = [
-            {
-                id: 1,
-                icon: '🎯',
-                title: 'Líder Inmobiliario',
-                tag: '#Trabajo',
-                tagColor: 'indigo',
-                level: 2,
-                progress: 66,
-                nextTask: 'Investigar tendencias inmobiliarias en TikTok',
-                streak: 3,
-                active: true,
-                color: 'from-indigo-500 to-purple-500',
-                xp: 850
-            },
-            {
-                id: 2,
-                icon: '💰',
-                title: 'Libertad Financiera',
-                tag: '#Finanzas',
-                tagColor: 'emerald',
-                level: 1,
-                progress: 25,
-                nextTask: 'Crear presupuesto mensual',
-                streak: 0,
-                active: false,
-                color: 'from-emerald-500 to-teal-500',
-                xp: 320
-            },
-            {
-                id: 3,
-                icon: '🎓',
-                title: 'Inglés B2',
-                tag: '#Educación',
-                tagColor: 'amber',
-                level: 3,
-                progress: 40,
-                nextTask: 'Práctica de listening 30min',
-                streak: 12,
-                active: false,
-                color: 'from-amber-500 to-orange-500',
-                xp: 680
-            },
-            {
-                id: 4,
-                icon: '💪',
-                title: 'Maratón 42K',
-                tag: '#Salud',
-                tagColor: 'rose',
-                level: 1,
-                progress: 10,
-                nextTask: 'Correr 5km intervalos',
-                streak: 2,
-                active: false,
-                color: 'from-rose-500 to-pink-500',
-                xp: 150
-            }
-        ];
+        /* Vista derivada del store: cada meta → {progress (% nivel actual), nextTask, xp, level}.
+         * Así goals-page y goal-detail siempre cuentan la misma historia. */
+        function goalView(g) {
+            var stats = VITA_XP.computeGoalStats(g);
+            var lvlIdx = Math.min(stats.level, g.levels.length) - 1;
+            var pending = lvlIdx >= 0 ? (g.levels[lvlIdx].tasks || []).filter(function (t) { return !t.done; }) : [];
+            var doneCount = lvlIdx >= 0 ? (g.levels[lvlIdx].tasks || []).filter(function (t) { return !!t.done; }).length : 0;
+            var total = lvlIdx >= 0 ? (g.levels[lvlIdx].tasks || []).length : 0;
+            return {
+                id: g.id, icon: g.icon, title: g.title, tag: g.tag, tagColor: g.tagColor,
+                color: g.color, streak: g.streak || 0,
+                level: stats.level, progress: stats.levelPct[lvlIdx] || 0,
+                xp: stats.xp, isComplete: stats.isComplete,
+                nextTask: pending.length ? pending[0].title : (stats.isComplete ? 'Meta completada 🏆' : 'Añade tareas al nivel'),
+                weekDone: doneCount, weekTotal: total
+            };
+        }
+        function views() { return goals.map(goalView); }
+        function findGoal(id) { return goals.find(function (g) { return g.id === id; }); }
 
-        // Calcular XP total y nivel global (curva cuadrática del spec, no lineal /200)
-        const totalXP = goals.reduce((sum, g) => sum + g.xp, 0);
-        const globalLevel = globalLevelForXP(totalXP);
+        // Calcular XP total y nivel global (curva cuadrática del spec)
+        function calcTotals() {
+            var totalXP = goals.reduce(function (sum, g) { return sum + VITA_XP.computeGoalStats(g).xp; }, 0);
+            return { totalXP: totalXP, globalLevel: globalLevelForXP(totalXP) };
+        }
 
-        let currentGoalId = 1;
+        let currentGoalId = goals.length ? goals[0].id : null;
 
         function renderPills() {
             const container = document.getElementById('goals-pills');
-            container.innerHTML = goals.map(goal => {
+            container.innerHTML = views().map(goal => {
                 const badgeColor = goal.id === currentGoalId ? 'bg-indigo-600 text-white' : 'bg-slate-500 text-white';
                 return `
                     <button 
-                        onclick="switchGoal(${goal.id})"
+                        onclick="switchGoal('${goal.id}')"
+                        aria-label="${goal.title}, nivel ${goal.level}"
                         class="pill flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${goal.id === currentGoalId ? 'active bg-white ring-2 ring-indigo-500' : 'bg-slate-200 opacity-60 grayscale'}"
                     >
                         ${goal.icon}
@@ -270,7 +236,8 @@
         }
 
         function renderMainCard() {
-            const goal = goals.find(g => g.id === currentGoalId);
+            const goal = views().find(g => g.id === currentGoalId);
+            if (!goal) return;
             const card = document.getElementById('main-goal-card');
             
             card.innerHTML = `
@@ -343,16 +310,16 @@
                         <div class="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-xs">✓</div>
                         <div class="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-xs text-slate-400">3</div>
                     </div>
-                    <span class="text-slate-400 font-medium text-xs">2 de 3 tareas esta semana</span>
+                    <span class="text-slate-400 font-medium text-xs">${goal.weekDone} de ${goal.weekTotal} tareas del nivel</span>
                 </div>
-                <a href="goal-detail.html" class="mt-4 block text-center text-sm font-bold text-indigo-600 hover:text-indigo-800">Ver camino de niveles →</a>
+                <a href="goal-detail.html?goal=${goal.id}" class="mt-4 block text-center text-sm font-bold text-indigo-600 hover:text-indigo-800">Ver camino de niveles →</a>
             `;
         }
 
         function renderAllGoals() {
             const grid = document.getElementById('goals-grid');
-            grid.innerHTML = goals.map(goal => `
-                <div onclick="switchGoal(${goal.id}); hideAllGoals()" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${goal.id === currentGoalId ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''}">
+            grid.innerHTML = views().map(goal => `
+                <div onclick="switchGoal('${goal.id}'); hideAllGoals()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')switchGoal('${goal.id}');hideAllGoals()" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${goal.id === currentGoalId ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''}">
                     <div class="flex justify-between items-start mb-2">
                         <span class="text-3xl">${goal.icon}</span>
                         <span class="w-6 h-6 bg-slate-700 text-white rounded-full flex items-center justify-center text-xs font-bold">${goal.level}</span>
@@ -386,35 +353,38 @@
 
         let toastTimer = null;
         function showToast(msg) {
-            const el = document.getElementById('xp-toast');
+            const el = document.getElementById('vita-toast');
             el.textContent = msg;
-            el.classList.remove('hidden');
+            el.classList.add('show');
             clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => el.classList.add('hidden'), 2200);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
         }
 
         function completeTask(btn) {
             if (btn.classList.contains('completed')) return;
+            // Completa de verdad la primera tarea pendiente del nivel actual (mismo store que goal-detail)
+            const goal = findGoal(currentGoalId);
+            if (!goal) return;
+            const stats = VITA_XP.computeGoalStats(goal);
+            const lvlIdx = Math.min(stats.level, goal.levels.length) - 1;
+            const task = lvlIdx >= 0 ? (goal.levels[lvlIdx].tasks || []).find(t => !t.done) : null;
+            if (!task) { showToast('Nada pendiente: edita el plan en el detalle'); return; }
+            const before = stats.xp;
+            task.done = true;
+            store.save(goals);
+            const after = VITA_XP.computeGoalStats(goal).xp;
+
             btn.classList.add('completed');
             btn.innerHTML = '✓';
-            
-            // XP según spec: 100 * 1.25^(nivel-1)
-            const goal = goals.find(g => g.id === currentGoalId);
-            const gained = taskXPForLevel(goal.level);
-            goal.xp += gained;
-            
-            // Actualizar displays de XP
             updateXPDisplays();
             renderMainCard();
-            showToast(`¡+${gained} XP! Total en esta meta: ${goal.xp.toLocaleString()}`);
+            showToast(`¡+${after - before} XP! Total en esta meta: ${after.toLocaleString()}`);
         }
 
         function updateXPDisplays() {
-            const newTotal = goals.reduce((sum, g) => sum + g.xp, 0);
-            document.getElementById('total-xp').textContent = newTotal.toLocaleString();
-            
-            // Recalcular nivel global (curva cuadrática del spec)
-            document.getElementById('global-level').textContent = globalLevelForXP(newTotal);
+            const { totalXP, globalLevel } = calcTotals();
+            document.getElementById('total-xp').textContent = totalXP.toLocaleString();
+            document.getElementById('global-level').textContent = globalLevel;
         }
 
         function enterFocusMode() {
@@ -431,8 +401,7 @@
         }
 
         // Inicializar
-        document.getElementById('total-xp').textContent = totalXP.toLocaleString();
-        document.getElementById('global-level').textContent = globalLevel;
+        updateXPDisplays();
         renderPills();
         renderMainCard();
     </script>
