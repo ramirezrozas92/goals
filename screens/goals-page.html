@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%); 
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .card-shadow { 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02); 
+        }
+        
+        .progress-fill { 
+            transition: width 1s cubic-bezier(0.65, 0, 0.35, 1); 
+        }
+        
+        .pill {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .pill.active {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+        
+        .level-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .main-card {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .task-check {
+            transition: all 0.2s;
+        }
+        
+        .task-check:active {
+            transform: scale(0.9);
+        }
+        
+        .task-check.completed {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-in {
+            animation: slideUp 0.5s ease forwards;
+        }
+        
+        /* XP Badge en header */
+        .xp-header {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+        }
+        
+        /* Global Level Badge */
+        .global-level {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Animación de XP */
+        @keyframes xp-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .xp-animate {
+            animation: xp-pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Header con XP Global y Nivel -->
+    <div class="px-6 pt-8 pb-4">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <p class="text-slate-400 text-sm font-semibold mb-1">Buenos días, Alex</p>
+                <h1 class="text-2xl font-black text-slate-800">Tus Metas</h1>
+            </div>
+            
+            <!-- Stats: XP + Nivel Global -->
+            <div class="flex items-center gap-3">
+                <!-- XP Total -->
+                <div class="xp-header px-4 py-2 rounded-full flex items-center gap-2 xp-animate">
+                    <span class="text-lg">⚡</span>
+                    <div class="flex flex-col leading-none">
+                        <span class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">XP Total</span>
+                        <span class="font-black text-amber-900 text-sm" id="total-xp">2,450</span>
+                    </div>
+                </div>
+                
+                <!-- Nivel Global -->
+                <div class="global-level w-12 h-12 rounded-2xl flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold opacity-80 leading-none mt-0.5">NIVEL</span>
+                    <span class="text-xl font-black leading-none" id="global-level">12</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Píldoras de Goals con Superíndice de Nivel -->
+    <div class="px-6 mb-6">
+        <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2" id="goals-pills">
+            <!-- Generado por JS -->
+        </div>
+    </div>
+
+    <!-- Goal Principal -->
+    <div class="px-6">
+        <div class="main-card bg-white rounded-[2.5rem] p-7 card-shadow animate-in" id="main-goal-card">
+            <!-- Contenido generado por JS -->
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="px-6 mt-6 grid grid-cols-2 gap-3">
+        <button onclick="enterFocusMode()" class="bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <span>🎯</span>
+            <span>Focus Mode</span>
+        </button>
+        <button onclick="showAllGoals()" class="bg-white text-slate-700 font-bold py-4 rounded-2xl border-2 border-slate-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <span>📋</span>
+            <span>Ver Todas</span>
+        </button>
+    </div>
+
+    <!-- Vista "Todas las metas" -->
+    <div id="all-goals-view" class="fixed inset-0 bg-white z-50 transform translate-y-full transition-transform duration-300 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800">Todas tus metas</h2>
+                    <p class="text-sm text-slate-400 mt-1">4 metas activas</p>
+                </div>
+                <button onclick="hideAllGoals()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold">
+                    ✕
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-4" id="goals-grid">
+                <!-- Generado por JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de ejemplo con XP por goal
+        const goals = [
+            {
+                id: 1,
+                icon: '🎯',
+                title: 'Líder Inmobiliario',
+                tag: '#Trabajo',
+                tagColor: 'indigo',
+                level: 2,
+                progress: 66,
+                nextTask: 'Investigar tendencias inmobiliarias en TikTok',
+                streak: 3,
+                active: true,
+                color: 'from-indigo-500 to-purple-500',
+                xp: 850
+            },
+            {
+                id: 2,
+                icon: '💰',
+                title: 'Libertad Financiera',
+                tag: '#Finanzas',
+                tagColor: 'emerald',
+                level: 1,
+                progress: 25,
+                nextTask: 'Crear presupuesto mensual',
+                streak: 0,
+                active: false,
+                color: 'from-emerald-500 to-teal-500',
+                xp: 320
+            },
+            {
+                id: 3,
+                icon: '🎓',
+                title: 'Inglés B2',
+                tag: '#Educación',
+                tagColor: 'amber',
+                level: 3,
+                progress: 40,
+                nextTask: 'Práctica de listening 30min',
+                streak: 12,
+                active: false,
+                color: 'from-amber-500 to-orange-500',
+                xp: 680
+            },
+            {
+                id: 4,
+                icon: '💪',
+                title: 'Maratón 42K',
+                tag: '#Salud',
+                tagColor: 'rose',
+                level: 1,
+                progress: 10,
+                nextTask: 'Correr 5km intervalos',
+                streak: 2,
+                active: false,
+                color: 'from-rose-500 to-pink-500',
+                xp: 150
+            }
+        ];
+
+        // Calcular XP total y nivel global
+        const totalXP = goals.reduce((sum, g) => sum + g.xp, 0);
+        const globalLevel = Math.floor(totalXP / 200) + 1; // Cada 200 XP = 1 nivel
+
+        let currentGoalId = 1;
+
+        function renderPills() {
+            const container = document.getElementById('goals-pills');
+            container.innerHTML = goals.map(goal => {
+                const badgeColor = goal.id === currentGoalId ? 'bg-indigo-600 text-white' : 'bg-slate-500 text-white';
+                return `
+                    <button 
+                        onclick="switchGoal(${goal.id})"
+                        class="pill flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${goal.id === currentGoalId ? 'active bg-white ring-2 ring-indigo-500' : 'bg-slate-200 opacity-60 grayscale'}"
+                    >
+                        ${goal.icon}
+                        <span class="level-badge ${badgeColor}">${goal.level}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderMainCard() {
+            const goal = goals.find(g => g.id === currentGoalId);
+            const card = document.getElementById('main-goal-card');
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-gradient-to-br ${goal.color} rounded-2xl flex items-center justify-center text-3xl shadow-lg text-white relative">
+                            ${goal.icon}
+                            <span class="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs font-black text-slate-800 border-2 border-white shadow-sm">
+                                ${goal.level}
+                            </span>
+                        </div>
+                        <div>
+                            <h2 class="text-slate-800 font-extrabold text-xl leading-tight mb-1">${goal.title}</h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-${goal.tagColor}-500 font-bold text-[10px] uppercase tracking-widest">${goal.tag}</span>
+                                ${goal.streak > 0 ? `<span class="text-amber-500 text-xs">🔥 ${goal.streak}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">XP Meta</div>
+                            <div class="font-black text-slate-700 text-lg">${goal.xp.toLocaleString()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="font-bold text-slate-700">Progreso Nivel ${goal.level}</span>
+                        <span class="font-black text-slate-800">${goal.progress}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5">
+                        <div class="progress-fill bg-gradient-to-r ${goal.color} h-full rounded-full" style="width: ${goal.progress}%"></div>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-400 font-medium text-center">
+                        ${100 - goal.progress}% para Nivel ${goal.level + 1}
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Siguiente acción</span>
+                            <p class="text-slate-800 font-bold text-base leading-snug">
+                                ${goal.nextTask}
+                            </p>
+                            <div class="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                <span>⏱️ ~25 min</span>
+                                <span>•</span>
+                                <span class="text-indigo-600 font-semibold">+50 XP</span>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            onclick="completeTask(this, ${goal.xp})"
+                            class="task-check min-w-[44px] h-11 w-11 rounded-full border-2 border-slate-200 flex items-center justify-center text-transparent hover:border-indigo-500 hover:text-indigo-500 transition-all bg-white shadow-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between text-sm">
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-xs">✓</div>
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-xs">✓</div>
+                        <div class="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-xs text-slate-400">3</div>
+                    </div>
+                    <span class="text-slate-400 font-medium text-xs">2 de 3 tareas esta semana</span>
+                </div>
+            `;
+        }
+
+        function renderAllGoals() {
+            const grid = document.getElementById('goals-grid');
+            grid.innerHTML = goals.map(goal => `
+                <div onclick="switchGoal(${goal.id}); hideAllGoals()" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${goal.id === currentGoalId ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''}">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-3xl">${goal.icon}</span>
+                        <span class="w-6 h-6 bg-slate-700 text-white rounded-full flex items-center justify-center text-xs font-bold">${goal.level}</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1 leading-tight">${goal.title}</h3>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 mb-2">
+                        <div class="h-full bg-gradient-to-r ${goal.color} rounded-full" style="width: ${goal.progress}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500 font-semibold">${goal.progress}%</span>
+                        <span class="text-amber-600 font-bold">${goal.xp} XP</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchGoal(id) {
+            currentGoalId = id;
+            renderPills();
+            
+            const card = document.getElementById('main-goal-card');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                renderMainCard();
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 200);
+        }
+
+        function completeTask(btn, currentXP) {
+            btn.classList.add('completed');
+            btn.innerHTML = '✓';
+            
+            // Animar XP
+            const goal = goals.find(g => g.id === currentGoalId);
+            goal.xp += 50;
+            
+            // Actualizar displays de XP
+            updateXPDisplays();
+            
+            setTimeout(() => {
+                alert(`¡+50 XP! Total en esta meta: ${goal.xp}`);
+            }, 300);
+        }
+
+        function updateXPDisplays() {
+            const newTotal = goals.reduce((sum, g) => sum + g.xp, 0);
+            document.getElementById('total-xp').textContent = newTotal.toLocaleString();
+            
+            // Recalcular nivel global
+            const newLevel = Math.floor(newTotal / 200) + 1;
+            document.getElementById('global-level').textContent = newLevel;
+        }
+
+        function enterFocusMode() {
+            const goal = goals.find(g => g.id === currentGoalId);
+            alert(`Entrando en Focus Mode: ${goal.title}`);
+        }
+
+        function showAllGoals() {
+            renderAllGoals();
+            document.getElementById('all-goals-view').classList.remove('translate-y-full');
+        }
+
+        function hideAllGoals() {
+            document.getElementById('all-goals-view').classList.add('translate-y-full');
+        }
+
+        // Inicializar
+        document.getElementById('total-xp').textContent = totalXP.toLocaleString();
+        document.getElementById('global-level').textContent = globalLevel;
+        renderPills();
+        renderMainCard();
+    </script>
+
+</body>
+</html>
