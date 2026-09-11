@@ -396,7 +396,11 @@
 <body>
 
     <div class="header">
-        <div class="greeting">Buenos días, Alex 👋</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:400px;margin-bottom:8px;">
+            <a href="goals-page.html" style="font-size:13px;font-weight:700;color:var(--primary);text-decoration:none;">← Metas</a>
+            <div class="greeting" id="greeting" style="margin:0;">Buenos días 👋</div>
+            <span style="width:52px;"></span>
+        </div>
         <div class="progress-wrapper">
             <div class="progress-label">
                 <span>Tu progreso hoy</span>
@@ -428,20 +432,46 @@
     </div>
 
     <script>
-        // Datos de ejemplo - En producción vendrían de localStorage o API
-        let habits = [
-            { id: 1, title: "Publicar video en TikTok", desc: "Nivel 2: Marca Personal", icon: "📱", tag: "Meta: Líder Inmobiliario", tagClass: "tag-meta", status: "pending" },
-            { id: 2, title: "Meditar 10 minutos", desc: "Nivel 1: Bienestar Mental", icon: "🧘", tag: "Hábito Diario", tagClass: "tag-habito", status: "pending" },
-            { id: 3, title: "Leer 20 páginas", desc: "Nivel 3: Crecimiento Personal", icon: "📚", tag: "Meta: Líder Inmobiliario", tagClass: "tag-meta", status: "pending" },
-            { id: 4, title: "Ejercicio cardiovascular", desc: "Nivel 2: Salud Física", icon: "🏃", tag: "Hábito Diario", tagClass: "tag-habito", status: "pending" },
-            { id: 5, title: "Revisar inbox a cero", desc: "Nivel 1: Productividad", icon: "📧", tag: "Trabajo Profundo", tagClass: "tag-meta", status: "pending" }
+        // Hábitos de hoy. Persisten en localStorage (clave vita-focus-v1) para que
+        // recargar no pierda el avance. Coherente con meta "Líder Inmobiliario" Nivel 2.
+        const STORAGE_KEY = 'vita-focus-v1';
+        const DEFAULT_HABITS = [
+            { id: 1, title: "Publicar video en TikTok", desc: "Nivel 2: Marca Personal · +125 XP", icon: "📱", tag: "Meta: Líder Inmobiliario", tagClass: "tag-meta", status: "pending" },
+            { id: 2, title: "Meditar 10 minutos", desc: "Nivel 1: Bienestar Mental · +100 XP", icon: "🧘", tag: "Hábito Diario", tagClass: "tag-habito", status: "pending" },
+            { id: 3, title: "Leer 20 páginas", desc: "Nivel 3: Crecimiento Personal · +156 XP", icon: "📚", tag: "Meta: Líder Inmobiliario", tagClass: "tag-meta", status: "pending" },
+            { id: 4, title: "Ejercicio cardiovascular", desc: "Nivel 2: Salud Física · +125 XP", icon: "🏃", tag: "Hábito Diario", tagClass: "tag-habito", status: "pending" },
+            { id: 5, title: "Revisar inbox a cero", desc: "Nivel 1: Productividad · +100 XP", icon: "📧", tag: "Trabajo Profundo", tagClass: "tag-meta", status: "pending" }
         ];
+
+        let habits;
+        try {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            habits = Array.isArray(saved) && saved.length ? saved : structuredClone(DEFAULT_HABITS);
+        } catch { habits = structuredClone(DEFAULT_HABITS); }
+
+        function persist() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(habits)); } catch {}
+        }
 
         let currentIndex = 0;
         let timerInterval = null;
-        let timerSeconds = 25 * 60; // 25 minutos por defecto
+        const FOCUS_SECONDS = 25 * 60;
+        let timerSeconds = FOCUS_SECONDS;
+
+        function stopTimer(resetLabel) {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            timerSeconds = FOCUS_SECONDS;
+            const btn = document.getElementById('timer-btn');
+            const display = document.getElementById('timer-display');
+            if (btn) { btn.classList.remove('running'); btn.innerHTML = '⏱️ Focus Timer'; }
+            if (display && resetLabel) { display.classList.remove('active'); display.textContent = '25:00'; }
+        }
 
         function init() {
+            stopTimer(false);
+            const hour = new Date().getHours();
+            const part = hour < 13 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
+            document.getElementById('greeting').textContent = part + ' 👋';
             updateProgress();
             renderCurrentCard();
         }
@@ -460,9 +490,12 @@
         }
 
         function renderCurrentCard() {
+            stopTimer(false);
             const container = document.getElementById('focus-container');
+            document.getElementById('completion-screen').classList.remove('active');
+            container.style.display = 'block';
             const pendingHabits = habits.filter(h => h.status === 'pending');
-            
+
             if (pendingHabits.length === 0) {
                 showCompletionScreen();
                 return;
@@ -494,15 +527,15 @@
                     <p class="task-desc">${habit.desc}</p>
                 </div>
 
-                <button class="btn-complete" onclick="completeHabit(this)">
+                <button class="btn-complete" onclick="completeHabit(event, this)">
                     Hecho por hoy ✨
                 </button>
 
                 <div class="secondary-actions">
-                    <button class="btn-secondary" onclick="skipHabit()">
-                        ↷ Saltar
+                    <button class="btn-secondary" onclick="skipHabit()" title="No cuenta como completado; sale de la cola de hoy">
+                        ↷ Omitir hoy
                     </button>
-                    <button class="btn-secondary" onclick="postponeHabit()">
+                    <button class="btn-secondary" onclick="postponeHabit()" title="Pasa esta tarjeta al final de la cola">
                         ⏰ Hacer después
                     </button>
                 </div>
@@ -539,13 +572,14 @@
             setTimeout(() => ripple.remove(), 600);
         }
 
-        function completeHabit(btn) {
-            createRipple(btn, event);
+        function completeHabit(e, btn) {
+            if (e) createRipple(btn, e);
             
             btn.innerHTML = '¡Completado! 🎉';
             btn.classList.add('completed');
             
             habits[currentIndex].status = 'completed';
+            persist();
             updateProgress();
             
             // Efecto de confeti
@@ -553,7 +587,7 @@
             
             setTimeout(() => {
                 const card = document.getElementById('current-card');
-                card.classList.add('exiting-left');
+                if (card) card.classList.add('exiting-left');
                 
                 setTimeout(() => {
                     renderCurrentCard();
@@ -562,9 +596,13 @@
         }
 
         function skipHabit() {
+            // Omitir = resuelto pero NO completado (no suma XP). Por eso la pantalla
+            // final muestra "X/5 completados" aunque la cola quede vacía.
             habits[currentIndex].status = 'skipped';
+            persist();
+            updateProgress();
             const card = document.getElementById('current-card');
-            card.classList.add('exiting-right');
+            if (card) card.classList.add('exiting-right');
             
             setTimeout(() => {
                 renderCurrentCard();
@@ -573,12 +611,14 @@
 
         function postponeHabit() {
             // Mover al final de la lista de pendientes
+            stopTimer(true);
             const current = habits[currentIndex];
             habits.splice(currentIndex, 1);
             habits.push(current);
+            persist();
             
             const card = document.getElementById('current-card');
-            card.classList.add('exiting-right');
+            if (card) card.classList.add('exiting-right');
             
             setTimeout(() => {
                 renderCurrentCard();
@@ -608,10 +648,8 @@
                     if (timerSeconds <= 0) {
                         clearInterval(timerInterval);
                         timerInterval = null;
-                        alert('¡Tiempo completado! 🎉');
-                        btn.innerHTML = '⏱️ Focus Timer';
-                        display.classList.remove('active');
-                        timerSeconds = 25 * 60;
+                        display.textContent = '¡Listo! 🎉';
+                        setTimeout(() => stopTimer(true), 2500);
                     }
                 }, 1000);
             }
@@ -632,19 +670,26 @@
         }
 
         function showCompletionScreen() {
+            stopTimer(false);
             document.getElementById('focus-container').style.display = 'none';
             document.querySelector('.header').style.display = 'none';
             document.getElementById('completion-screen').classList.add('active');
             
             const completed = habits.filter(h => h.status === 'completed').length;
+            const skipped = habits.filter(h => h.status === 'skipped').length;
             document.getElementById('final-score').textContent = `${completed}/${habits.length}`;
+            document.querySelector('#completion-screen p').textContent =
+                skipped > 0
+                    ? `Completaste ${completed} y omitiste ${skipped} hoy`
+                    : 'Has completado todos tus hábitos de hoy';
         }
 
         function resetDay() {
+            stopTimer(false);
             habits.forEach(h => h.status = 'pending');
+            persist();
             document.getElementById('focus-container').style.display = 'block';
             document.querySelector('.header').style.display = 'block';
-            document.getElementById('completion-screen').classList.add('active');
             document.getElementById('completion-screen').classList.remove('active');
             init();
         }

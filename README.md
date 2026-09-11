@@ -14,6 +14,13 @@ docs/
   sistema-xp.md            # Spec del algoritmo XP local/global
 ```
 
+## Modelo XP canónico
+
+- Tarea nivel n: `round(100 × 1.25^(n-1))` → L1=100, L2=125, L3=156. Bonus +250 por nivel, +1000 al cerrar meta.
+- Nivel global cuadrático: `floor(sqrt(XP/500)) + 1` → 2000 XP = Nivel 3.
+- Meta "Líder Inmobiliario": **850 XP · Nivel 2** en todas las pantallas.
+- `goals-page` = % del nivel (66%); `goal-detail` = % global (38%, 5/13 tareas).
+
 ## Cómo verlo
 
 Sin build. Abre cualquier archivo de `screens/` en el navegador, o sirve la carpeta:
