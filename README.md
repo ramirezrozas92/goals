@@ -53,10 +53,9 @@ Detalles en `docs/llm.md`. La clave, si usas una, vive solo en tu navegador.
 Sin build. Sirve la carpeta (los módulos usan rutas relativas `../assets`):
 
 ```powershell
-# desde la raíz del repo
-node --version  # solo para tests; las pantallas no lo necesitan
-python -m http.server 8000
-# abre http://localhost:8000/screens/goals-page.html
+# desde la raíz del repo (sin instalar nada)
+node serve.js
+# abre http://localhost:8000/  → entra directo a Tus Metas
 ```
 
 > Abrir el `.html` con doble clic también funciona, pero servido por HTTP es más fiel.
